@@ -1,0 +1,9 @@
+[Core]
+Name = Jenkins
+Module = esss_jenkins.py
+
+[Documentation]
+Description = ESSS Jenkins workflow helper
+
+[Python]
+Version = 3
