@@ -1,4 +1,4 @@
-from .esss_jenkins import filter_jobs_by_factor_string
+from esss_jenkins import filter_jobs_by_factor_string
 
 
 def test_factors():
