@@ -149,7 +149,7 @@ class JenkinsBot(BotPlugin):
 
     @botcmd(split_args_with=None)
     def jenkins_build(self, msg, args):
-        """Finds jobs based on keywords, separated by spaces."""
+        """Triggers jobs by number from last `!jenkins find` or `!jenkins history` commands"""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
         if not settings['token']:
