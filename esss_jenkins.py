@@ -288,7 +288,12 @@ class JenkinsBot(BotPlugin):
             build_number = 'lastBuild'
 
         url = 'job/{job_name}/{build_number}/testReport/api/json'.format(job_name=job_name, build_number=build_number)
-        result = self._get_jenkins_json_request(url, params={'tree': 'suites[cases[name,status]]'})
+        try:
+            result = self._get_jenkins_json_request(url, params={'tree': 'suites[cases[name,status]]'})
+        except ResponseError as e:
+            if e.response.status_code == 404:
+                return []
+            raise
         try:
             cases = result['suites'][0]['cases']
         except:
