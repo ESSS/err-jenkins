@@ -274,9 +274,9 @@ class JenkinsBot(BotPlugin):
         WHITE_LIST = 'bruno prusse denivy damiani oliveira marcelo tadeu igor'.split()
         if info['userId'] in WHITE_LIST:
             rocket_api.send_message(template.format(**fmt_kwargs).strip(), '@{}'.format(info['userId']))
-            d = '**DEBUG SENT TO USER**: User: @{userId}\n'.format(userId=info['userId'])
+            d = '**DEBUG2 SENT TO USER**: User: @{userId}\n'.format(userId=info['userId'])
         else:
-            d = '**DEBUG (NOT ON WHITELIST)**: User: @{userId}\n'.format(userId=info['userId'])
+            d = '**DEBUG2 (NOT ON WHITELIST)**: User: @{userId}\n'.format(userId=info['userId'])
         rocket_api.send_message(d + template.format(**fmt_kwargs).strip(), '@bruno')
         return 'OK'
 
