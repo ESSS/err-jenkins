@@ -155,12 +155,12 @@ class JenkinsBot(BotPlugin):
         if not settings['token']:
             return dedent("""\
                 **Jenkins API Token not configured**. 
-                Find your API Token [here](https://eden.esss.com.br/jenkins/user/me/configure) and execute:
+                Find your API Token [here](https://eden.esss.com.br/jenkins/user/{user}/configure) (make sure you are logged in) and execute:
                     
                     `!jenkins token <TOKEN>` 
                     
-                This only needs to be done once.                 
-            """)
+                This only needs to be done once.
+            """.format(user=user))
 
         if not settings['last_job_listing']:
             return dedent("""\
