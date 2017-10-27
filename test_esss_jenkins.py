@@ -1,4 +1,34 @@
+import pytest
+
 from esss_jenkins import filter_jobs_by_factor_string
+
+
+pytest_plugins = ["errbot.backends.test"]
+extra_plugin_dir = '.'
+
+
+@pytest.fixture
+def testbot(testbot):
+    from errbot.backends.test import TestPerson
+    jenkins_plugin = testbot.bot.plugin_manager.get_plugin_obj_by_name('Jenkins')
+    jenkins_plugin.config = {'JENKINS_URL': 'https://my-server.com/jenkins'}
+    testbot.bot.sender = TestPerson('fry@localhost', nick='fry')
+    return testbot
+
+
+def test_jenkins_token(testbot):
+    testbot.push_message('!jenkins token')
+    response = testbot.pop_message()
+    assert 'Jenkins API Token not configured' in response
+    assert 'https://my-server.com/jenkins/user/fry/configure' in response
+
+    testbot.push_message('!jenkins token secret-token')
+    response = testbot.pop_message()
+    assert response == 'Token saved.'
+
+    testbot.push_message('!jenkins token')
+    response = testbot.pop_message()
+    assert response == 'You API Token is: secret-token'
 
 
 def test_factors():
