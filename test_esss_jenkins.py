@@ -10,13 +10,26 @@ extra_plugin_dir = '.'
 @pytest.fixture
 def testbot(testbot):
     from errbot.backends.test import TestPerson
-    jenkins_plugin = testbot.bot.plugin_manager.get_plugin_obj_by_name('Jenkins')
-    jenkins_plugin.config = {'JENKINS_URL': 'https://my-server.com/jenkins'}
     testbot.bot.sender = TestPerson('fry@localhost', nick='fry')
     return testbot
 
 
-def test_jenkins_token(testbot):
+@pytest.fixture(autouse=True)
+def jenkins_plugin(testbot):
+    jenkins_plugin = testbot.bot.plugin_manager.get_plugin_obj_by_name('Jenkins')
+    jenkins_plugin.config = {
+        'JENKINS_URL': 'https://my-server.com/jenkins',
+        'JENKINS_TOKEN': 'jenkins-secret-token',
+        'JENKINS_USERNAME': 'jenkins-user',
+
+        'ROCKETCHAT_USER': 'rocketchat-user',
+        'ROCKETCHAT_PASSWORD': 'rocketchat-secret-password',
+        'ROCKETCHAT_DOMAIN': 'https://my-server.com/rocketchat',
+    }
+    return jenkins_plugin
+
+
+def test_token(testbot):
     testbot.push_message('!jenkins token')
     response = testbot.pop_message()
     assert 'Jenkins API Token not configured' in response
@@ -29,6 +42,32 @@ def test_jenkins_token(testbot):
     testbot.push_message('!jenkins token')
     response = testbot.pop_message()
     assert response == 'You API Token is: secret-token'
+
+
+def test_webhook(jenkins_plugin, mocker):
+    import rocketchat.api
+    mocker.patch.object(rocketchat.api.RocketChatAPI, 'send_message', autospec=True)
+
+    class DummyRequest:
+        pass
+
+    request = DummyRequest()
+    request.params = {
+        'number': '2',
+        'job_name': 'fett-master-linux64',
+        'timestamp': '1508516240981',
+        'builtOn': 'dev-ubuntu16.04-linux-sv01-ci01',
+        'event': 'jenkins.job.started',
+        'userId': 'fry',
+        'url': 'job/fett-master-linux64/2/',
+     }
+    jenkins_plugin.jenkins(request)
+    args, kwargs = rocketchat.api.RocketChatAPI.send_message.call_args
+    assert kwargs == {}
+    _, text, user = args
+    assert 'Job Started' in text
+    assert '[fett-master-linux64](https://my-server.com/jenkins/job/fett-master-linux64/2/)' in text
+    assert user == '@fry'
 
 
 def test_factors():

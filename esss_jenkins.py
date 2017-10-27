@@ -260,6 +260,7 @@ class JenkinsBot(BotPlugin):
         info['status'] = status
         self.save_user_settings(info['userId'], settings)
 
+        fmt_kwargs['jenkins_url'] = self.config['JENKINS_URL']
         fmt_kwargs.update(info)
         rocket_api.send_message(template.format(**fmt_kwargs).strip(), '@{}'.format(info['userId']))
         return 'OK'
@@ -490,12 +491,12 @@ This only needs to be done once.
 
 JOB_STARTED_MSG = '''
 **Job Started**!
-{status} [{job_name}](https://eden.esss.com.br/jenkins/{url}) build **{number}**
+{status} [{job_name}]({jenkins_url}/{url}) build **{number}**
 Building on: **{builtOn}**
 '''
 
 JOB_COMPLETED_MSG = '''
 **Job Completed**!
-{status} [{job_name}](https://eden.esss.com.br/jenkins/{url}) build **{number}**
+{status} [{job_name}]({jenkins_url}/{url}) build **{number}**
 {test_failures_msg}
 '''
