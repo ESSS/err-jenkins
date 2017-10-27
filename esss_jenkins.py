@@ -3,9 +3,8 @@ from pprint import pformat
 from textwrap import dedent
 from urllib.parse import urlencode
 
-from errbot import BotPlugin, botcmd, webhook, Message, arg_botcmd
+from errbot import BotPlugin, botcmd, webhook, arg_botcmd
 import json
-import urllib
 
 import requests
 
@@ -153,14 +152,7 @@ class JenkinsBot(BotPlugin):
         user = msg.frm.nick
         settings = self.load_user_settings(user)
         if not settings['token']:
-            return dedent("""\
-                **Jenkins API Token not configured**. 
-                Find your API Token [here](https://eden.esss.com.br/jenkins/user/{user}/configure) (make sure you are logged in) and execute:
-                    
-                    `!jenkins token <TOKEN>` 
-                    
-                This only needs to be done once.
-            """.format(user=user))
+            return NO_TOKEN_MSG.format(user=user, jenkins_url=self.config['JENKINS_URL'])
 
         if not settings['last_job_listing']:
             return dedent("""\
@@ -196,8 +188,7 @@ class JenkinsBot(BotPlugin):
             if settings['token']:
                 return "You API Token is: `{}`".format(settings['token'])
             else:
-                return "**API Token not configured**, find your token " \
-                       "[here](https://eden.esss.com.br/jenkins/me/configure)."
+                return NO_TOKEN_MSG.format(user=user, jenkins_url=self.config['JENKINS_URL'])
         else:
             settings['token'] = args[0]
             self.save_user_settings(user, settings)
@@ -269,6 +260,7 @@ class JenkinsBot(BotPlugin):
         info['status'] = status
         self.save_user_settings(info['userId'], settings)
 
+        fmt_kwargs['jenkins_url'] = self.config['JENKINS_URL']
         fmt_kwargs.update(info)
         rocket_api.send_message(template.format(**fmt_kwargs).strip(), '@{}'.format(info['userId']))
         return 'OK'
@@ -488,15 +480,23 @@ COMMENTS = {
     ],
 }
 
+NO_TOKEN_MSG = """
+**Jenkins API Token not configured**. 
+Find your API Token [here]({jenkins_url}/user/{user}/configure) (make sure you are logged in) and execute:
+
+    `!jenkins token <TOKEN>` 
+
+This only needs to be done once.
+"""
 
 JOB_STARTED_MSG = '''
 **Job Started**!
-{status} [{job_name}](https://eden.esss.com.br/jenkins/{url}) build **{number}**
+{status} [{job_name}]({jenkins_url}/{url}) build **{number}**
 Building on: **{builtOn}**
 '''
 
 JOB_COMPLETED_MSG = '''
 **Job Completed**!
-{status} [{job_name}](https://eden.esss.com.br/jenkins/{url}) build **{number}**
+{status} [{job_name}]({jenkins_url}/{url}) build **{number}**
 {test_failures_msg}
 '''
