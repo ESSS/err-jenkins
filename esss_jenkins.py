@@ -1,4 +1,5 @@
 import random
+from fnmatch import fnmatch
 from pprint import pformat
 from textwrap import dedent
 from urllib.parse import urlencode
@@ -449,15 +450,15 @@ def filter_jobs_by_find_string(job_names, input_factors):
     def matches(fields):
         fields = {x.lower() for x in fields}
         for test_field in and_factors:
-            if test_field not in fields:
+            if not any(fnmatch(x, test_field) for x in fields):
                 return False
         if not or_factors:
             return True
         for or_factor in or_factors:
-            if or_factor in fields:
+            if any(fnmatch(x, or_factor) for x in fields):
                 return True
-        else:
-            return False
+
+        return False
 
     return [x for x in job_names if matches(set(x.split('-')))]
 

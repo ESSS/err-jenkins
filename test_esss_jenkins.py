@@ -70,8 +70,15 @@ def test_webhook(jenkins_plugin, mocker):
     assert user == '@fry'
 
 
+def test_find_string_basic():
+    assert filter_jobs_by_find_string(JOBS, 'ASIM-501 app win64,linux64'.split()) == [
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-linux64',
+    ]
+
+
 @pytest.mark.parametrize('tr', [str.lower, str.upper, lambda x: x])
-def test_find_string(tr):
+def test_find_string_case_sensitive(tr):
     assert filter_jobs_by_find_string(JOBS, tr('ASIM-501 app win64').split()) == [
         'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
     ]
@@ -96,6 +103,33 @@ def test_find_string(tr):
     assert filter_jobs_by_find_string(JOBS, [tr('"eden-win64-27"')]) == [
         "eden-win64-27",
     ]
+
+
+def test_find_string_glob():
+    assert filter_jobs_by_find_string(JOBS, 'network-refacto*'.split()) == [
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64g',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-linux64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-calc-linux64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-synthetic-linux64',
+        'alfasim-fb-ASIM-480-network-refactorings-part1-synthetic-linux64',
+    ]
+
+    assert filter_jobs_by_find_string(JOBS, 'network-refacto* win64,linux*'.split()) == [
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-linux64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-calc-linux64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-synthetic-linux64',
+        'alfasim-fb-ASIM-480-network-refactorings-part1-synthetic-linux64',
+    ]
+    assert filter_jobs_by_find_string(JOBS, 'network-refacto* linux*'.split()) == [
+        'alfasim-fb-ASIM-501-network-refactorings-part1-app-linux64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-calc-linux64',
+        'alfasim-fb-ASIM-501-network-refactorings-part1-synthetic-linux64',
+        'alfasim-fb-ASIM-480-network-refactorings-part1-synthetic-linux64',
+    ]
+
+    assert filter_jobs_by_find_string(JOBS, 'simbr network-refacto* win64,linux*'.split()) == []
 
 
 JOBS = [
