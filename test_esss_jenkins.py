@@ -105,6 +105,14 @@ def test_find_string_case_sensitive(tr):
     ]
 
 
+
+def test_find_string_long_glob():
+    assert filter_jobs_by_find_string(JOBS, '"*rb*kra*"'.split()) == [
+        "etk-rb-KRA-v2.5.0-win64-27",
+        "etk-rb-KRA-v2.5.0-win64-35",
+    ]
+
+
 def test_find_string_glob():
     assert filter_jobs_by_find_string(JOBS, 'network-refacto*'.split()) == [
         'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
