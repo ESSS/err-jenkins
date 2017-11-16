@@ -433,8 +433,8 @@ def filter_jobs_by_find_string(job_names, input_factors):
     factors = []
     for factor in input_factors:
         if factor.startswith('"') and factor.endswith('"'):
-            word = factor[1:-1]
-            job_names = [x for x in job_names if x.lower() == word.lower()]
+            word = factor[1:-1].lower()
+            job_names = [x for x in job_names if fnmatch(x.lower(), word)]
         else:
             factor = factor.lower()
             factors.extend(factor.split('-'))
