@@ -123,7 +123,7 @@ class JenkinsBot(BotPlugin):
         all_job_names = self._fetch_all_job_names()
         self.log.debug('found {} jobs in total, filtering by {!r}'.format(len(all_job_names), args))
 
-        job_names = sorted(filter_jobs_by_factor_string(all_job_names, args))
+        job_names = sorted(filter_jobs_by_find_string(all_job_names, args))
         if len(job_names) > 20:
             yield "This resulted in **{}** jobs, which is too much.\n" \
                   "Try to narrow your research.".format(len(job_names))
@@ -428,14 +428,15 @@ def get_emoji_for_job_status(result):
     }.get(result, result)
 
 
-def filter_jobs_by_factor_string(job_names, input_factors):
+def filter_jobs_by_find_string(job_names, input_factors):
     factors = []
-    for x in input_factors:
-        if x.startswith('"') and x.endswith('"'):
-            word = x[1:-1]
-            job_names = [x for x in job_names if x == word]
+    for factor in input_factors:
+        if factor.startswith('"') and factor.endswith('"'):
+            word = factor[1:-1]
+            job_names = [x for x in job_names if x.lower() == word.lower()]
         else:
-            factors.extend(x.split('-'))
+            factor = factor.lower()
+            factors.extend(factor.split('-'))
 
     and_factors = []
     or_factors = []
@@ -446,6 +447,7 @@ def filter_jobs_by_factor_string(job_names, input_factors):
             and_factors.append(factor)
 
     def matches(fields):
+        fields = {x.lower() for x in fields}
         for test_field in and_factors:
             if test_field not in fields:
                 return False
