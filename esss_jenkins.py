@@ -1,4 +1,5 @@
 import random
+from fnmatch import fnmatch
 from pprint import pformat
 from textwrap import dedent
 from urllib.parse import urlencode
@@ -123,7 +124,7 @@ class JenkinsBot(BotPlugin):
         all_job_names = self._fetch_all_job_names()
         self.log.debug('found {} jobs in total, filtering by {!r}'.format(len(all_job_names), args))
 
-        job_names = sorted(filter_jobs_by_factor_string(all_job_names, args))
+        job_names = sorted(filter_jobs_by_find_string(all_job_names, args))
         if len(job_names) > 20:
             yield "This resulted in **{}** jobs, which is too much.\n" \
                   "Try to narrow your research.".format(len(job_names))
@@ -186,7 +187,7 @@ class JenkinsBot(BotPlugin):
         settings = self.load_user_settings(user)
         if not args:
             if settings['token']:
-                return "You API Token is: `{}`".format(settings['token'])
+                return "You API Token is: `{}` (user: {})".format(settings['token'], user)
             else:
                 return NO_TOKEN_MSG.format(user=user, jenkins_url=self.config['JENKINS_URL'])
         else:
@@ -393,7 +394,7 @@ class JenkinsBot(BotPlugin):
         r = requests.post(post_url, auth=(user, token))
         self.log.debug('post_jenkins_json_request: url {} = {}'.format(post_url, r.status_code))
         if r.status_code not in (200, 201):
-            raise ResponseError('Error posting to {url}'.format(url=post_url), r)
+            raise ResponseError('Error posting to {url}: {r}\n{text}'.format(url=post_url, r=r, text=r.text), r)
 
     def _trigger_job(self, job_name, user):
         builds = self._get_job_builds(job_name)
@@ -428,14 +429,15 @@ def get_emoji_for_job_status(result):
     }.get(result, result)
 
 
-def filter_jobs_by_factor_string(job_names, input_factors):
+def filter_jobs_by_find_string(job_names, input_factors):
     factors = []
-    for x in input_factors:
-        if x.startswith('"') and x.endswith('"'):
-            word = x[1:-1]
-            job_names = [x for x in job_names if x == word]
+    for factor in input_factors:
+        if factor.startswith('"') and factor.endswith('"'):
+            word = factor[1:-1]
+            job_names = [x for x in job_names if x.lower() == word.lower()]
         else:
-            factors.extend(x.split('-'))
+            factor = factor.lower()
+            factors.extend(factor.split('-'))
 
     and_factors = []
     or_factors = []
@@ -446,16 +448,17 @@ def filter_jobs_by_factor_string(job_names, input_factors):
             and_factors.append(factor)
 
     def matches(fields):
+        fields = {x.lower() for x in fields}
         for test_field in and_factors:
-            if test_field not in fields:
+            if not any(fnmatch(x, test_field) for x in fields):
                 return False
         if not or_factors:
             return True
         for or_factor in or_factors:
-            if or_factor in fields:
+            if any(fnmatch(x, or_factor) for x in fields):
                 return True
-        else:
-            return False
+
+        return False
 
     return [x for x in job_names if matches(set(x.split('-')))]
 
