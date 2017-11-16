@@ -186,7 +186,7 @@ class JenkinsBot(BotPlugin):
         settings = self.load_user_settings(user)
         if not args:
             if settings['token']:
-                return "You API Token is: `{}`".format(settings['token'])
+                return "You API Token is: `{}` (user: {})".format(settings['token'], user)
             else:
                 return NO_TOKEN_MSG.format(user=user, jenkins_url=self.config['JENKINS_URL'])
         else:
@@ -393,7 +393,7 @@ class JenkinsBot(BotPlugin):
         r = requests.post(post_url, auth=(user, token))
         self.log.debug('post_jenkins_json_request: url {} = {}'.format(post_url, r.status_code))
         if r.status_code not in (200, 201):
-            raise ResponseError('Error posting to {url}'.format(url=post_url), r)
+            raise ResponseError('Error posting to {url}: {r}\n{text}'.format(url=post_url, r=r, text=r.text), r)
 
     def _trigger_job(self, job_name, user):
         builds = self._get_job_builds(job_name)
