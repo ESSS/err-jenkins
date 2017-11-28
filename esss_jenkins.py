@@ -240,7 +240,7 @@ class JenkinsBot(BotPlugin):
             fmt_kwargs = {'comment': get_job_state_comment('STARTED')}
         else:
             template = JOB_COMPLETED_MSG
-            status = ":white_check_mark:" if info['result'] == 'SUCCESS' else ":negative_squared_cross_mark:"
+            status = ":white_check_mark:" if info['result'] == 'SUCCESS' else ":x:"
             comment = get_job_state_comment(info['result'])
             info['test_failures'] = self._get_build_test_errors(info['job_name'], info['number'])
             if info['test_failures']:
@@ -420,7 +420,7 @@ def get_job_state_comment(key):
 def get_emoji_for_job_status(result):
     return {
         'SUCCESS': ":white_check_mark:",
-        'FAILURE': ":negative_squared_cross_mark:",
+        'FAILURE': ":x:",
         'ABORTED': ":white_circle:",
         'NOT_STARTED': ":white_circle:",
         'UNSTABLE': ":warning:",
