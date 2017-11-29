@@ -29,6 +29,8 @@ W:\Miniconda\envs\py36\python.exe -m venv .env36
 .env36\Scripts\activate
 ```
 
+**It is important to use a pure virtual environment and not a conda environment**.
+
 Install dependencies:
 
 ```
