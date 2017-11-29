@@ -149,11 +149,40 @@ class JenkinsBot(BotPlugin):
 
     @botcmd(split_args_with=None)
     def jenkins_build(self, msg, args):
-        """Triggers jobs by number from last `!jenkins find` or `!jenkins history` commands"""
+        """Triggers jobs by an alias or build number from last `!jenkins find` or `!jenkins history` commands"""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
         if not settings['token']:
             return NO_TOKEN_MSG.format(user=user, jenkins_url=self.config['JENKINS_URL'])
+
+        def trigger_jobs(job_names, parameters):
+            for job_name in job_names:
+                self._trigger_job(job_name, user, parameters)
+    
+            items = ['[{job_name}]({url})'.format(job_name=x, url=self._get_job_url(x)) for x in job_names]
+            return dedent("""
+                Triggered **{}** jobs:
+                
+                {}
+            """.format(len(items), '\n'.join(items)))
+
+        aliases = settings.get('aliases')
+        if aliases is not None and args and len(args) > 0:
+            alias = args[0]
+            if alias in aliases:
+                search_pattern, parameters = aliases[alias]
+        
+                job_names = self._find_all_job_names_filtered(search_pattern + args[1:])
+                if len(job_names) == 0:
+                    return 'No job found with pattern: `{}`'.format(search_pattern + args[1:])
+                 
+                if len(job_names) > 1:
+                    msg = 'Multiple jobs found with pattern: `{}`'.format(search_pattern + args[1:])
+                    for name in job_names[:5]:
+                        msg += '\n - {}'.format(name)
+                    return msg 
+
+                return trigger_jobs(job_names, parameters)
 
         if not settings['last_job_listing']:
             return dedent("""\
@@ -170,15 +199,39 @@ class JenkinsBot(BotPlugin):
         job_names = [x for (i, x) in enumerate(settings['last_job_listing']) if i in indexes]
         if not job_names:
             return "No jobs selected with those indexes."
-        for job_name in job_names:
-            self._trigger_job(job_name, user)
+        
+        return trigger_jobs(job_names, None)
 
-        items = ['[{job_name}]({url})'.format(job_name=x, url=self._get_job_url(x)) for x in job_names]
-        return dedent("""
-            Triggered **{}** jobs:
-            
-            {}
-        """.format(len(items), '\n'.join(items)))
+    @arg_botcmd('search_pattern', nargs='*', help='Job search pattern')
+    @arg_botcmd('alias', nargs='?', help='Alias name')
+    @arg_botcmd('--parameters', dest='parameters', help='Job parameters')
+    def jenkins_buildalias(self, msg, alias, search_pattern, parameters):
+        """Adds a build alias based on keywords and parameters e.g: `!jenkins buildalias r30l rocky30 linux64 --parameters=BM='source'`)."""
+        user = msg.frm.nick
+        settings = self.load_user_settings(user)
+        
+        aliases = settings.get('aliases')
+        if alias is None:
+            if aliases:
+                msg = 'Existing aliases:\n'
+                for alias, (search_pattern, parameters) in aliases.items():
+                    msg += ' - `{}: {} - {}`'.format(alias, search_pattern, parameters)
+                return msg
+
+            return dedent("""\
+                Pass alias name, some search keywords, and an optional set of parameters, for example:
+                    `rr30l rocky30 linux64 --parameters=BUILD_MODE=source&EDEN_SKIP_DEPS_TESTS=etk`
+            """)
+
+        if aliases is None:
+            aliases = {}
+
+        aliases[alias] = search_pattern, parameters
+        settings['aliases'] = aliases
+        self.save_user_settings(user, settings)
+        
+        return str('Alias registered: `{}: {} : {}`'.format(alias, search_pattern, parameters))
+
 
     @botcmd(split_args_with=None)
     def jenkins_token(self, msg, args):
@@ -297,6 +350,12 @@ class JenkinsBot(BotPlugin):
         result = self._get_jenkins_json_request('api/json', params={'tree': 'jobs[fullName]'})
         return [job['fullName'] for job in result['jobs']]
 
+    def _find_all_job_names_filtered(self, args):
+        all_job_names = self._fetch_all_job_names()
+        self.log.debug('found {} jobs in total, filtering by {!r}'.format(len(all_job_names), args))
+
+        return sorted(filter_jobs_by_find_string(all_job_names, args))
+
     def _get_jenkins_json_request(self, query_url, params=None):
         """
         returns None if fails to request
@@ -396,20 +455,25 @@ class JenkinsBot(BotPlugin):
         if r.status_code not in (200, 201):
             raise ResponseError('Error posting to {url}: {r}\n{text}'.format(url=post_url, r=r, text=r.text), r)
 
-    def _trigger_job(self, job_name, user):
-        builds = self._get_job_builds(job_name)
-        parameters = self._get_job_parameters(job_name)
-
-        never_built = not builds
-        takes_parameters = bool(parameters)
-        if never_built or not takes_parameters:
-            post_url = 'job/{}/build' if not parameters else 'job/{}/buildWithParameters'
-            post_url = post_url.format(job_name)
+    def _trigger_job(self, job_name, user, parameters=None):
+        if parameters is not None:
+            post_url = 'job/{}/buildWithParameters?{}'.format(job_name, parameters)
             self._post_jenkins_json_request(post_url, user)
-        elif takes_parameters:
-            parameters_values = self._get_job_build_parameters_values(job_name)
-            post_url = 'job/{}/buildWithParameters?{}'.format(job_name, urlencode(parameters_values))
-            self._post_jenkins_json_request(post_url, user)
+        
+        else:
+            builds = self._get_job_builds(job_name)
+            parameters = self._get_job_parameters(job_name)
+    
+            never_built = not builds
+            takes_parameters = bool(parameters)
+            if never_built or not takes_parameters:
+                post_url = 'job/{}/build' if not parameters else 'job/{}/buildWithParameters'
+                post_url = post_url.format(job_name)
+                self._post_jenkins_json_request(post_url, user)
+            elif takes_parameters:
+                parameters_values = self._get_job_build_parameters_values(job_name)
+                post_url = 'job/{}/buildWithParameters?{}'.format(job_name, urlencode(parameters_values))
+                self._post_jenkins_json_request(post_url, user)
 
 
 def get_job_state_comment(key):

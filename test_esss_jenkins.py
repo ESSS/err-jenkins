@@ -44,6 +44,58 @@ def test_token(testbot):
     assert response == 'You API Token is: secret-token (user: fry)'
 
 
+def test_build_alias(testbot):
+    from unittest.mock import patch
+    
+    testbot.push_message('!jenkins buildalias')
+    response = testbot.pop_message()
+    assert 'Pass alias name, some search keywords, and an optional set of parameters' in response
+
+    testbot.push_message('!jenkins buildalias rr30l rocky30 linux --parameters=EXT=20')
+    response = testbot.pop_message()
+    assert 'Alias registered: rr30l' in response
+
+    testbot.push_message('!jenkins buildalias')
+    response = testbot.pop_message()
+    assert 'Existing aliases' in response
+    assert 'rr30l' in response
+
+    testbot.push_message('!jenkins token secret-token')
+    response = testbot.pop_message()
+    assert response == 'Token saved.'
+    
+    jenkins_bot = testbot.bot.plugin_manager.get_plugin_obj_by_name('Jenkins')
+
+    with patch.object(jenkins_bot, '_find_all_job_names_filtered') as job_names:
+        job_names.return_value = []
+        testbot.push_message('!jenkins build rr30l')
+        response = testbot.pop_message()
+        assert job_names.call_count == 1
+        assert "No job found with pattern: ['rocky30', 'linux']" == response
+        
+        testbot.push_message('!jenkins build rr30l 6666')
+        response = testbot.pop_message()
+        assert job_names.call_count == 2
+        assert "No job found with pattern: ['rocky30', 'linux', '6666']" == response
+
+        job_names.return_value = ['job_1', 'job_2']
+        testbot.push_message('!jenkins build rr30l 6666')
+        response = testbot.pop_message()
+        assert job_names.call_count == 3
+        assert "Multiple jobs found with pattern" in response
+
+        job_names.return_value = ['job_1']
+        with patch.object(jenkins_bot, '_post_jenkins_json_request') as post_request:
+            testbot.push_message('!jenkins build rr30l 6666')
+            response = testbot.pop_message()
+
+            assert job_names.call_count == 4
+            assert post_request.call_count == 1
+            assert post_request.call_args[0][0].endswith('buildWithParameters?{}'.format('EXT=20'))
+            assert post_request.call_args[0][1] == 'fry'
+            assert "Triggered 1 jobs:" in response
+
+
 def test_webhook(jenkins_plugin, mocker):
     import rocketchat.api
     mocker.patch.object(rocketchat.api.RocketChatAPI, 'send_message', autospec=True)
