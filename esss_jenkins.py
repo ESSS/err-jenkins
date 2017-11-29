@@ -202,8 +202,6 @@ class JenkinsBot(BotPlugin):
         
         return trigger_jobs(job_names, None)
 
-
-#     @botcmd(split_args_with=None)
     @arg_botcmd('search_pattern', nargs='*', help='Job search pattern')
     @arg_botcmd('alias', nargs='?', help='Alias name')
     @arg_botcmd('--parameters', dest='parameters', help='Job parameters')
