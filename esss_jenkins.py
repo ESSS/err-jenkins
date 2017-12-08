@@ -125,7 +125,7 @@ class JenkinsBot(BotPlugin):
         self.log.debug('found {} jobs in total, filtering by {!r}'.format(len(all_job_names), args))
 
         job_names = sorted(filter_jobs_by_find_string(all_job_names, args))
-        if len(job_names) > 20:
+        if len(job_names) > 50:
             yield "This resulted in **{}** jobs, which is too much.\n" \
                   "Try to narrow your research.".format(len(job_names))
             return
