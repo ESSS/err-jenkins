@@ -51,9 +51,12 @@ Create a bot for local development:
 errbot --init
 ```
 
-And edit the generated `config.py` with your username instead of `@CHANGE_ME`.
+And edit the generated `config.py`:
 
-Start it up.
+* Change `@CHANGE_ME` to your username.
+* Change `BOT_EXTRA_PLUGIN_DIR` to point to the current directory.
+
+Start it up with:
 
 ```
 errbot -T
