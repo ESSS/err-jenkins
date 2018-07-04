@@ -30,16 +30,16 @@ def jenkins_plugin(testbot):
 
 
 def test_token(testbot):
-    testbot.push_message('!jenkins token')
+    testbot.push_message('!token')
     response = testbot.pop_message()
     assert 'Jenkins API Token not configured' in response
     assert 'https://my-server.com/jenkins/user/fry/configure' in response
 
-    testbot.push_message('!jenkins token secret-token')
+    testbot.push_message('!token secret-token')
     response = testbot.pop_message()
     assert response == 'Token saved.'
 
-    testbot.push_message('!jenkins token')
+    testbot.push_message('!token')
     response = testbot.pop_message()
     assert response == 'You API Token is: secret-token (user: fry)'
 
@@ -47,20 +47,20 @@ def test_token(testbot):
 def test_build_alias(testbot):
     from unittest.mock import patch
     
-    testbot.push_message('!jenkins buildalias')
+    testbot.push_message('!buildalias')
     response = testbot.pop_message()
     assert 'Pass alias name, some search keywords, and an optional set of parameters' in response
 
-    testbot.push_message('!jenkins buildalias rr30l rocky30 linux --parameters=EXT=20')
+    testbot.push_message('!buildalias rr30l rocky30 linux --parameters=EXT=20')
     response = testbot.pop_message()
     assert 'Alias registered: rr30l' in response
 
-    testbot.push_message('!jenkins buildalias')
+    testbot.push_message('!buildalias')
     response = testbot.pop_message()
     assert 'Existing aliases' in response
     assert 'rr30l' in response
 
-    testbot.push_message('!jenkins token secret-token')
+    testbot.push_message('!token secret-token')
     response = testbot.pop_message()
     assert response == 'Token saved.'
     
@@ -68,25 +68,25 @@ def test_build_alias(testbot):
 
     with patch.object(jenkins_bot, '_find_all_job_names_filtered') as job_names:
         job_names.return_value = []
-        testbot.push_message('!jenkins build rr30l')
+        testbot.push_message('!build rr30l')
         response = testbot.pop_message()
         assert job_names.call_count == 1
         assert "No job found with pattern: ['rocky30', 'linux']" == response
         
-        testbot.push_message('!jenkins build rr30l 6666')
+        testbot.push_message('!build rr30l 6666')
         response = testbot.pop_message()
         assert job_names.call_count == 2
         assert "No job found with pattern: ['rocky30', 'linux', '6666']" == response
 
         job_names.return_value = ['job_1', 'job_2']
-        testbot.push_message('!jenkins build rr30l 6666')
+        testbot.push_message('!build rr30l 6666')
         response = testbot.pop_message()
         assert job_names.call_count == 3
         assert "Multiple jobs found with pattern" in response
 
         job_names.return_value = ['job_1']
         with patch.object(jenkins_bot, '_post_jenkins_json_request') as post_request:
-            testbot.push_message('!jenkins build rr30l 6666')
+            testbot.push_message('!build rr30l 6666')
             response = testbot.pop_message()
 
             assert job_names.call_count == 4

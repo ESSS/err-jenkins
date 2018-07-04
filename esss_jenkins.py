@@ -76,7 +76,7 @@ class JenkinsBot(BotPlugin):
         return 'User settings:\n```python\n{}```'.format(pformat(settings))
 
     @botcmd(split_args_with=None)
-    def jenkins_history(self, msg, args):
+    def history(self, msg, args):
         """Returns a list with your job history, including running and previous runs."""
         user = args[0] if args else msg.frm.nick
         settings = self.load_user_settings(user)
@@ -97,7 +97,7 @@ class JenkinsBot(BotPlugin):
 
     @arg_botcmd('user', type=str)
     @arg_botcmd('--confirm', action='store_true')
-    def jenkins_clear(self, msg, user, confirm):
+    def clear(self, msg, user, confirm):
         """Clears your job history."""
         if not confirm:
             return 'Need to pass `--confirm` to this command'
@@ -107,7 +107,7 @@ class JenkinsBot(BotPlugin):
         return 'Job history on the trash.'
 
     @botcmd(split_args_with=None)
-    def jenkins_find(self, msg, args):
+    def find(self, msg, args):
         """Finds jobs based on keywords, separated by spaces (`ETK 1456 sci20 win64,linux64`)."""
         if not args:
             yield dedent("""\
@@ -148,7 +148,7 @@ class JenkinsBot(BotPlugin):
         self.save_user_settings(user, settings)
 
     @botcmd(split_args_with=None)
-    def jenkins_build(self, msg, args):
+    def build(self, msg, args):
         """Triggers jobs by an alias or build number from last `!jenkins find` or `!jenkins history` commands"""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
@@ -205,7 +205,7 @@ class JenkinsBot(BotPlugin):
     @arg_botcmd('search_pattern', nargs='*', help='Job search pattern')
     @arg_botcmd('alias', nargs='?', help='Alias name')
     @arg_botcmd('--parameters', dest='parameters', help='Job parameters')
-    def jenkins_buildalias(self, msg, alias, search_pattern, parameters):
+    def buildalias(self, msg, alias, search_pattern, parameters):
         """Adds a build alias based on keywords and parameters e.g: `!jenkins buildalias r30l rocky30 linux64 --parameters=BM='source'`)."""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
@@ -234,7 +234,7 @@ class JenkinsBot(BotPlugin):
 
 
     @botcmd(split_args_with=None)
-    def jenkins_token(self, msg, args):
+    def token(self, msg, args):
         """Set or get your Jenkins token"""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
