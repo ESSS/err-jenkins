@@ -234,7 +234,7 @@ class JenkinsBot(BotPlugin):
 
 
     @botcmd(split_args_with=None)
-    def token(self, msg, args):
+    def jenkins_token(self, msg, args):
         """Set or get your Jenkins token"""
         user = msg.frm.nick
         settings = self.load_user_settings(user)

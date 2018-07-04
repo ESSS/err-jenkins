@@ -30,16 +30,16 @@ def jenkins_plugin(testbot):
 
 
 def test_token(testbot):
-    testbot.push_message('!token')
+    testbot.push_message('!jenkins token')
     response = testbot.pop_message()
     assert 'Jenkins API Token not configured' in response
     assert 'https://my-server.com/jenkins/user/fry/configure' in response
 
-    testbot.push_message('!token secret-token')
+    testbot.push_message('!jenkins token secret-token')
     response = testbot.pop_message()
     assert response == 'Token saved.'
 
-    testbot.push_message('!token')
+    testbot.push_message('!jenkins token')
     response = testbot.pop_message()
     assert response == 'You API Token is: secret-token (user: fry)'
 
@@ -60,7 +60,7 @@ def test_build_alias(testbot):
     assert 'Existing aliases' in response
     assert 'rr30l' in response
 
-    testbot.push_message('!token secret-token')
+    testbot.push_message('!jenkins token secret-token')
     response = testbot.pop_message()
     assert response == 'Token saved.'
     
