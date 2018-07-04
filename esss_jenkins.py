@@ -91,7 +91,7 @@ class JenkinsBot(BotPlugin):
             
             {}
             
-            To trigger builds, use `!jenkins build <num1> <num2> <num3> ...`
+            To trigger builds, use `!build <num1> <num2> <num3> ...`
         """)
         return s.format('\n'.join(item_texts))
 
@@ -138,7 +138,7 @@ class JenkinsBot(BotPlugin):
     
                 {}
                 
-                To trigger builds, use `!jenkins build <num1> <num2> <num3> ...`
+                To trigger builds, use `!build <num1> <num2> <num3> ...`
             """.format(len(items), '\n'.join(items)))
         else:
             yield "No jobs found, sorry buddy."
@@ -149,7 +149,7 @@ class JenkinsBot(BotPlugin):
 
     @botcmd(split_args_with=None)
     def build(self, msg, args):
-        """Triggers jobs by an alias or build number from last `!jenkins find` or `!jenkins history` commands"""
+        """Triggers jobs by an alias or build number from last `!find` or `!history` commands"""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
         if not settings['token']:
@@ -187,14 +187,14 @@ class JenkinsBot(BotPlugin):
         if not settings['last_job_listing']:
             return dedent("""\
                 No job listing yet, list jobs first with:
-                    `!jenkins history`
-                    `!jenkins find <word1> <word2> ...`                    
+                    `!history`
+                    `!find <word1> <word2> ...`                    
             """)
 
         try:
             indexes = [int(x) for x in args]
         except ValueError:
-            return "Expected a list of indexes from the previous find command: `!jenkins build <word1> <word2> ...`"
+            return "Expected a list of indexes from the previous find command: `!build <word1> <word2> ...`"
 
         job_names = [x for (i, x) in enumerate(settings['last_job_listing']) if i in indexes]
         if not job_names:
@@ -206,7 +206,7 @@ class JenkinsBot(BotPlugin):
     @arg_botcmd('alias', nargs='?', help='Alias name')
     @arg_botcmd('--parameters', dest='parameters', help='Job parameters')
     def buildalias(self, msg, alias, search_pattern, parameters):
-        """Adds a build alias based on keywords and parameters e.g: `!jenkins buildalias r30l rocky30 linux64 --parameters=BM='source'`)."""
+        """Adds a build alias based on keywords and parameters e.g: `!buildalias r30l rocky30 linux64 --parameters=BM='source'`)."""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
         
