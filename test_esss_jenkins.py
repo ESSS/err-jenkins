@@ -1,10 +1,7 @@
 import pytest
-from _pytest.pytester import LineMatcher
-
-from esss_jenkins import filter_jobs_by_find_string
 
 
-pytest_plugins = ["errbot.backends.test"]
+pytest_plugins = ["errbot.backends.test", "pytester"]
 extra_plugin_dir = '.'
 
 
@@ -128,6 +125,8 @@ def test_webhook(jenkins_plugin, mocker):
 
 
 def test_find_string_basic():
+    from esss_jenkins import filter_jobs_by_find_string
+
     assert filter_jobs_by_find_string(JOBS, 'ASIM-501 app win64,linux64'.split()) == [
         'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
         'alfasim-fb-ASIM-501-network-refactorings-part1-app-linux64',
@@ -136,6 +135,8 @@ def test_find_string_basic():
 
 @pytest.mark.parametrize('tr', [str.lower, str.upper, lambda x: x])
 def test_find_string_case_sensitive(tr):
+    from esss_jenkins import filter_jobs_by_find_string
+
     assert filter_jobs_by_find_string(JOBS, tr('ASIM-501 app win64').split()) == [
         'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
     ]
@@ -163,6 +164,8 @@ def test_find_string_case_sensitive(tr):
 
 
 def test_find_string_long_glob():
+    from esss_jenkins import filter_jobs_by_find_string
+
     assert filter_jobs_by_find_string(JOBS, '"*rb*kra*"'.split()) == [
         "etk-rb-KRA-v2.5.0-win64-27",
         "etk-rb-KRA-v2.5.0-win64-35",
@@ -170,6 +173,8 @@ def test_find_string_long_glob():
 
 
 def test_find_string_glob():
+    from esss_jenkins import filter_jobs_by_find_string
+
     assert filter_jobs_by_find_string(JOBS, 'network-refacto*'.split()) == [
         'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
         'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64g',
@@ -196,7 +201,7 @@ def test_find_string_glob():
     assert filter_jobs_by_find_string(JOBS, 'simbr network-refacto* win64,linux*'.split()) == []
 
 
-def test_bhist(jenkins_plugin, testbot, mocker):
+def test_bhist(jenkins_plugin, testbot, mocker, LineMatcher):
     settings = jenkins_plugin.load_user_settings('fry')
     assert settings['jobs'] == []
 
