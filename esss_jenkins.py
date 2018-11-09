@@ -283,8 +283,8 @@ class JenkinsBot(BotPlugin):
                 del infos[index]
         infos.insert(0, info)
 
-        # keep maximum 10 jobs
-        infos = infos[:10]
+        # limit number of jobs
+        infos = infos[:15]
         settings['jobs'] = infos
 
         if info['event'] == 'jenkins.job.started':
