@@ -75,7 +75,7 @@ class JenkinsBot(BotPlugin):
         return 'User settings:\n```python\n{}```'.format(pformat(settings))
 
     @botcmd(split_args_with=None)
-    def history(self, msg, args):
+    def bhist(self, msg, args):
         """Returns a list with your job history, including running and previous runs."""
         user = args[0] if args else msg.frm.nick
         settings = self.load_user_settings(user)

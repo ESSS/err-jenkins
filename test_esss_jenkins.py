@@ -196,11 +196,11 @@ def test_find_string_glob():
     assert filter_jobs_by_find_string(JOBS, 'simbr network-refacto* win64,linux*'.split()) == []
 
 
-def test_history(jenkins_plugin, testbot, mocker):
+def test_bhist(jenkins_plugin, testbot, mocker):
     settings = jenkins_plugin.load_user_settings('fry')
     assert settings['jobs'] == []
 
-    testbot.push_message('!jenkins-history')
+    testbot.push_message('!bhist')
     response = testbot.pop_message()
     assert 'You never ran anything' in response
 
@@ -211,7 +211,7 @@ def test_history(jenkins_plugin, testbot, mocker):
     jenkins_plugin.save_user_settings('fry', settings)
     mocker.patch.object(jenkins_plugin, '_fetch_job_status', autospec=True, return_value='RUNNING')
 
-    testbot.push_message('!jenkins-history')
+    testbot.push_message('!bhist')
     response = testbot.pop_message()
 
     matcher = LineMatcher(response.splitlines())
