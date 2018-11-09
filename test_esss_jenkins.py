@@ -1,4 +1,5 @@
 import pytest
+from _pytest.pytester import LineMatcher
 
 from esss_jenkins import filter_jobs_by_find_string
 
@@ -10,6 +11,7 @@ extra_plugin_dir = '.'
 @pytest.fixture
 def testbot(testbot):
     from errbot.backends.test import TestPerson
+
     testbot.bot.sender = TestPerson('fry@localhost', nick='fry')
     return testbot
 
@@ -46,7 +48,7 @@ def test_token(testbot):
 
 def test_build_alias(testbot):
     from unittest.mock import patch
-    
+
     testbot.push_message('!buildalias')
     response = testbot.pop_message()
     assert 'Pass alias name, some search keywords, and an optional set of parameters' in response
@@ -63,7 +65,7 @@ def test_build_alias(testbot):
     testbot.push_message('!jenkins token secret-token')
     response = testbot.pop_message()
     assert response == 'Token saved.'
-    
+
     jenkins_bot = testbot.bot.plugin_manager.get_plugin_obj_by_name('Jenkins')
 
     with patch.object(jenkins_bot, '_find_all_job_names_filtered') as job_names:
@@ -72,7 +74,7 @@ def test_build_alias(testbot):
         response = testbot.pop_message()
         assert job_names.call_count == 1
         assert "No job found with pattern: ['rocky30', 'linux']" == response
-        
+
         testbot.push_message('!build rr30l 6666')
         response = testbot.pop_message()
         assert job_names.call_count == 2
@@ -98,10 +100,13 @@ def test_build_alias(testbot):
 
 def test_webhook(jenkins_plugin, mocker):
     import rocketchat.api
+
     mocker.patch.object(rocketchat.api.RocketChatAPI, 'send_message', autospec=True)
+
 
     class DummyRequest:
         pass
+
 
     request = DummyRequest()
     request.params = {
@@ -112,7 +117,7 @@ def test_webhook(jenkins_plugin, mocker):
         'event': 'jenkins.job.started',
         'userId': 'fry',
         'url': 'job/fett-master-linux64/2/',
-     }
+    }
     jenkins_plugin.jenkins(request)
     args, kwargs = rocketchat.api.RocketChatAPI.send_message.call_args
     assert kwargs == {}
@@ -157,7 +162,6 @@ def test_find_string_case_sensitive(tr):
     ]
 
 
-
 def test_find_string_long_glob():
     assert filter_jobs_by_find_string(JOBS, '"*rb*kra*"'.split()) == [
         "etk-rb-KRA-v2.5.0-win64-27",
@@ -190,6 +194,34 @@ def test_find_string_glob():
     ]
 
     assert filter_jobs_by_find_string(JOBS, 'simbr network-refacto* win64,linux*'.split()) == []
+
+
+def test_history(jenkins_plugin, testbot, mocker):
+    settings = jenkins_plugin.load_user_settings('fry')
+    assert settings['jobs'] == []
+
+    testbot.push_message('!jenkins-history')
+    response = testbot.pop_message()
+    assert 'You never ran anything' in response
+
+    settings['jobs'] = [
+        dict(job_name='job-A'),
+        dict(job_name='job-B'),
+    ]
+    jenkins_plugin.save_user_settings('fry', settings)
+    mocker.patch.object(jenkins_plugin, '_fetch_job_status', autospec=True, return_value='RUNNING')
+
+    testbot.push_message('!jenkins-history')
+    response = testbot.pop_message()
+
+    matcher = LineMatcher(response.splitlines())
+    matcher.fnmatch_lines([
+        'Here you go:',
+        ' 0. * job-A*1. * job-B*',
+        ' To trigger builds*',
+    ])
+    settings = jenkins_plugin.load_user_settings('fry')
+    assert settings['last_job_listing'] == ['job-A', 'job-B']
 
 
 JOBS = [

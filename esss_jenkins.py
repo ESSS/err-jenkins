@@ -1,13 +1,12 @@
+import json
 import random
 from fnmatch import fnmatch
 from pprint import pformat
 from textwrap import dedent
 from urllib.parse import urlencode
 
-from errbot import BotPlugin, botcmd, webhook, arg_botcmd
-import json
-
 import requests
+from errbot import BotPlugin, botcmd, webhook, arg_botcmd
 
 
 class ResponseError(Exception):
@@ -158,7 +157,7 @@ class JenkinsBot(BotPlugin):
         def trigger_jobs(job_names, parameters):
             for job_name in job_names:
                 self._trigger_job(job_name, user, parameters)
-    
+
             items = ['[{job_name}]({url})'.format(job_name=x, url=self._get_job_url(x)) for x in job_names]
             return dedent("""
                 Triggered **{}** jobs:
@@ -171,16 +170,16 @@ class JenkinsBot(BotPlugin):
             alias = args[0]
             if alias in aliases:
                 search_pattern, parameters = aliases[alias]
-        
+
                 job_names = self._find_all_job_names_filtered(search_pattern + args[1:])
                 if len(job_names) == 0:
                     return 'No job found with pattern: `{}`'.format(search_pattern + args[1:])
-                 
+
                 if len(job_names) > 1:
                     msg = 'Multiple jobs found with pattern: `{}`'.format(search_pattern + args[1:])
                     for name in job_names[:5]:
                         msg += '\n - {}'.format(name)
-                    return msg 
+                    return msg
 
                 return trigger_jobs(job_names, parameters)
 
@@ -199,7 +198,7 @@ class JenkinsBot(BotPlugin):
         job_names = [x for (i, x) in enumerate(settings['last_job_listing']) if i in indexes]
         if not job_names:
             return "No jobs selected with those indexes."
-        
+
         return trigger_jobs(job_names, None)
 
     @arg_botcmd('search_pattern', nargs='*', help='Job search pattern')
@@ -209,7 +208,7 @@ class JenkinsBot(BotPlugin):
         """Adds a build alias based on keywords and parameters e.g: `!buildalias r30l rocky30 linux64 --parameters=BM='source'`)."""
         user = msg.frm.nick
         settings = self.load_user_settings(user)
-        
+
         aliases = settings.get('aliases')
         if alias is None:
             if aliases:
@@ -229,7 +228,7 @@ class JenkinsBot(BotPlugin):
         aliases[alias] = search_pattern, parameters
         settings['aliases'] = aliases
         self.save_user_settings(user, settings)
-        
+
         return str('Alias registered: `{}: {} : {}`'.format(alias, search_pattern, parameters))
 
 
@@ -264,6 +263,7 @@ class JenkinsBot(BotPlugin):
         :return:
         """
         from rocketchat.api import RocketChatAPI
+
         rocket_api = RocketChatAPI(
             settings={
                 'username': self.config['ROCKETCHAT_USER'],
@@ -459,11 +459,11 @@ class JenkinsBot(BotPlugin):
         if parameters is not None:
             post_url = 'job/{}/buildWithParameters?{}'.format(job_name, parameters)
             self._post_jenkins_json_request(post_url, user)
-        
+
         else:
             builds = self._get_job_builds(job_name)
             parameters = self._get_job_parameters(job_name)
-    
+
             never_built = not builds
             takes_parameters = bool(parameters)
             if never_built or not takes_parameters:
