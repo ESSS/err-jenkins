@@ -24,8 +24,8 @@ cd err-jenkins
 Create a virtual environment with Python 3.6 and activate it. Using `conda`:
 
 ```
-conda create -n py36 python=3.6
-W:\Miniconda\envs\py36\python.exe -m venv .env36 
+conda install -n root virtualenv
+virtualenv .env36 
 .env36\Scripts\activate
 ```
 
