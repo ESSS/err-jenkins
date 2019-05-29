@@ -403,7 +403,7 @@ class JenkinsBot(BotPlugin):
                     raise
             raise
         else:
-            result = response['result']
+            result = response.get('result')
             if result is None:
                 # response like this: {"_class":"hudson.model.FreeStyleBuild","result":null}
                 # means that there's a last build and it is currently running

@@ -229,6 +229,17 @@ def test_bhist(jenkins_plugin, testbot, mocker, LineMatcher):
     assert settings['last_job_listing'] == ['job-A', 'job-B']
 
 
+def test_fetch_job_status(jenkins_plugin, mocker):
+    mocker.patch.object(jenkins_plugin,
+                        '_get_jenkins_json_request',
+                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": None})
+    jenkins_plugin._fetch_job_status("dummy")
+    mocker.patch.object(jenkins_plugin,
+                        '_get_jenkins_json_request',
+                        return_value={"_class": "hudson.model.FreeStyleBuild"})
+    jenkins_plugin._fetch_job_status("dummy")
+
+
 JOBS = [
     'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64',
     'alfasim-fb-ASIM-501-network-refactorings-part1-app-win64g',
