@@ -1,4 +1,5 @@
 import pytest
+import requests
 
 
 pytest_plugins = ["errbot.backends.test", "pytester"]
@@ -230,14 +231,43 @@ def test_bhist(jenkins_plugin, testbot, mocker, LineMatcher):
 
 
 def test_fetch_job_status(jenkins_plugin, mocker):
+
     mocker.patch.object(jenkins_plugin,
                         '_get_jenkins_json_request',
-                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": None})
-    jenkins_plugin._fetch_job_status("dummy")
+                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "SUCCESS"})
+    assert jenkins_plugin._fetch_job_status("dummy") == "SUCCESS"
+
+    mocker.patch.object(jenkins_plugin,
+                        '_get_jenkins_json_request',
+                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "FAILURE"})
+    assert jenkins_plugin._fetch_job_status("dummy") == "FAILURE"
+
+    mocker.patch.object(jenkins_plugin,
+                        '_get_jenkins_json_request',
+                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "ABORTED"})
+    assert jenkins_plugin._fetch_job_status("dummy") == "ABORTED"
+
+    mocker.patch.object(jenkins_plugin,
+                        '_get_jenkins_json_request',
+                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "UNSTABLE"})
+    assert jenkins_plugin._fetch_job_status("dummy") == "UNSTABLE"
+
+    # If `JenkinsBot._get_jenkins_json_request` `request` doesn't have key 'result', then status should be "RUNNING"
     mocker.patch.object(jenkins_plugin,
                         '_get_jenkins_json_request',
                         return_value={"_class": "hudson.model.FreeStyleBuild"})
-    jenkins_plugin._fetch_job_status("dummy")
+    assert jenkins_plugin._fetch_job_status("dummy") == "RUNNING"
+
+    # If `JenkinsBot._get_jenkins_json_request` `request` raises 'ResponseError' but the job exists, then status
+    # should be "NOT_STARTED"
+    response_404 = requests.Response()
+    response_404.status_code = 404
+    mocker.patch.object(jenkins_plugin,
+                        '_get_jenkins_json_request',
+                        side_effect=[jenkins_plugin.ResponseError("Any message", response_404),
+                                     {"_class": "hudson.model.FreeStyleBuild"}])
+
+    assert jenkins_plugin._fetch_job_status("dummy") == "NOT_STARTED"
 
 
 JOBS = [

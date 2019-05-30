@@ -9,15 +9,18 @@ import requests
 from errbot import BotPlugin, botcmd, webhook, arg_botcmd
 
 
-class ResponseError(Exception):
-
-    def __init__(self, context, response):
-        super().__init__('{}: {}'.format(context, response))
-        self.response = response
-
-
 class JenkinsBot(BotPlugin):
     """Jenkins commands tailored to ESSS workflow"""
+
+    class ResponseError(Exception):
+        """
+        Use this as an inner-class so it can easily be accessed by tests from the plugin object.
+        errbot loads plugins dynamically, so to importing this in a test will result in a different
+        class object than the one loaded by errbot.
+        """
+        def __init__(self, context, response):
+            super().__init__('{}: {}'.format(context, response))
+            self.response = response
 
     def get_configuration_template(self):
         return {
@@ -329,7 +332,7 @@ class JenkinsBot(BotPlugin):
         url = 'job/{job_name}/{build_number}/testReport/api/json'.format(job_name=job_name, build_number=build_number)
         try:
             result = self._get_jenkins_json_request(url, params={'tree': 'suites[cases[name,status]]'})
-        except ResponseError as e:
+        except self.ResponseError as e:
             if e.response.status_code == 404:
                 return []
             raise
@@ -370,7 +373,7 @@ class JenkinsBot(BotPlugin):
         r = requests.get(url, auth=(user, token), params=params)
         if r.status_code not in [200, 201]:
             self.log.debug('_get_jenkins_json_request invalid response: {}'.format(r))
-            raise ResponseError('json request to {url}'.format(url=url), r)
+            raise self.ResponseError('json request to {url}'.format(url=url), r)
         return json.loads(r.text)
 
     def _fetch_job_status(self, job_name, build=None):
@@ -391,13 +394,13 @@ class JenkinsBot(BotPlugin):
                 'job/{job_name}/{build}/api/json'.format(job_name=job_name, build=build),
                 params={'tree': 'result'},
             )
-        except ResponseError as e:
+        except self.ResponseError as e:
             # no result yet, check if the job exists then
             if e.response.status_code == 404:
                 try:
                     self._get_jenkins_json_request('job/{job_name}/api/json'.format(job_name=job_name))
                     return 'NOT_STARTED'
-                except ResponseError as e:
+                except self.ResponseError as e:
                     if e.response.status_code == 404:
                         return None
                     raise
@@ -453,7 +456,7 @@ class JenkinsBot(BotPlugin):
         r = requests.post(post_url, auth=(user, token))
         self.log.debug('post_jenkins_json_request: url {} = {}'.format(post_url, r.status_code))
         if r.status_code not in (200, 201):
-            raise ResponseError('Error posting to {url}: {r}\n{text}'.format(url=post_url, r=r, text=r.text), r)
+            raise self.ResponseError('Error posting to {url}: {r}\n{text}'.format(url=post_url, r=r, text=r.text), r)
 
     def _trigger_job(self, job_name, user, parameters=None):
         if parameters is not None:
