@@ -1,4 +1,5 @@
 -r requirements.txt
-errbot
+errbot~=5.2
 pytest
 pytest-mock
+pluggy==0.11
