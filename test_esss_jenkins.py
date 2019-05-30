@@ -230,43 +230,26 @@ def test_bhist(jenkins_plugin, testbot, mocker, LineMatcher):
     assert settings['last_job_listing'] == ['job-A', 'job-B']
 
 
-def test_fetch_job_status(jenkins_plugin, mocker):
-
+@pytest.mark.parametrize("expected, return_value",
+                         [("SUCCESS", {"_class": "hudson.model.FreeStyleBuild", "result": "SUCCESS"}),
+                          ("FAILURE", {"_class": "hudson.model.FreeStyleBuild", "result": "FAILURE"}),
+                          ("ABORTED", {"_class": "hudson.model.FreeStyleBuild", "result": "ABORTED"}),
+                          ("UNSTABLE", {"_class": "hudson.model.FreeStyleBuild", "result": "UNSTABLE"}),
+                          ("RUNNING", {"_class": "hudson.model.FreeStyleBuild"})])
+def test_fetch_job_status(jenkins_plugin, mocker, expected, return_value):
     mocker.patch.object(jenkins_plugin,
                         '_get_jenkins_json_request',
-                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "SUCCESS"})
-    assert jenkins_plugin._fetch_job_status("dummy") == "SUCCESS"
+                        return_value=return_value)
+    assert jenkins_plugin._fetch_job_status("dummy") == expected
 
-    mocker.patch.object(jenkins_plugin,
-                        '_get_jenkins_json_request',
-                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "FAILURE"})
-    assert jenkins_plugin._fetch_job_status("dummy") == "FAILURE"
 
-    mocker.patch.object(jenkins_plugin,
-                        '_get_jenkins_json_request',
-                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "ABORTED"})
-    assert jenkins_plugin._fetch_job_status("dummy") == "ABORTED"
-
-    mocker.patch.object(jenkins_plugin,
-                        '_get_jenkins_json_request',
-                        return_value={"_class": "hudson.model.FreeStyleBuild", "result": "UNSTABLE"})
-    assert jenkins_plugin._fetch_job_status("dummy") == "UNSTABLE"
-
-    # If `JenkinsBot._get_jenkins_json_request` `request` doesn't have key 'result', then status should be "RUNNING"
-    mocker.patch.object(jenkins_plugin,
-                        '_get_jenkins_json_request',
-                        return_value={"_class": "hudson.model.FreeStyleBuild"})
-    assert jenkins_plugin._fetch_job_status("dummy") == "RUNNING"
-
-    # If `JenkinsBot._get_jenkins_json_request` `request` raises 'ResponseError' but the job exists, then status
-    # should be "NOT_STARTED"
+def test_fetch_job_status_not_started(jenkins_plugin, mocker):
     response_404 = requests.Response()
     response_404.status_code = 404
     mocker.patch.object(jenkins_plugin,
                         '_get_jenkins_json_request',
                         side_effect=[jenkins_plugin.ResponseError("Any message", response_404),
                                      {"_class": "hudson.model.FreeStyleBuild"}])
-
     assert jenkins_plugin._fetch_job_status("dummy") == "NOT_STARTED"
 
 
