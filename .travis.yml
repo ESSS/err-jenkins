@@ -9,3 +9,4 @@ install:
 
 script:
   - python -m pytest test_esss_jenkins.py
+  - pre-commit run --all-files --show-diff-on-failure
