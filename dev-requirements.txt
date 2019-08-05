@@ -2,5 +2,6 @@
 # unfortunately latest errbot 6.0 is breaking our tests (#16)
 errbot~=5.2
 markdown<3
+pre-commit
 pytest
 pytest-mock

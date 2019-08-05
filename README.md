@@ -25,7 +25,7 @@ Create a virtual environment with Python 3.6 and activate it. Using `conda`:
 
 ```
 conda install -n root virtualenv
-virtualenv .env36 
+virtualenv .env36
 .env36\Scripts\activate
 ```
 
