@@ -1,6 +1,6 @@
 [Core]
 Name = Jenkins
-Module = esss_jenkins.py
+Module = esss_jenkins
 
 [Documentation]
 Description = ESSS Jenkins workflow helper
